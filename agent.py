@@ -52,32 +52,31 @@ def run_assessment(patient_id: str) -> dict:
         llm = ChatVertexAI(model_name="gemini-2.5-flash", project="sound-oasis-283702", temperature=0)
         
         # System prompt instructions
+        from langchain_core.messages import SystemMessage, HumanMessage
+        
+        # System prompt instructions
         with open("PROMPTS.md", "r") as f:
             system_prompt = f.read()
 
-        # Append explicit JSON structure instructions to ensure flawless output
+        # Append explicit JSON structure instructions (single braces work perfectly since there is no prompt formatting engine)
         json_instruction = """
         IMPORTANT: Your output must be a single, valid JSON object matching the schema below. Do not wrap it in conversational text, and do not add any markdown blocks unless it is a valid JSON payload.
         
         JSON Schema:
-        {{
+        {
           "patient_id": "The ID of the patient",
           "assessment": "Urgent Referral" | "Urgent Investigation" | "Routine",
           "reasoning": "The detailed clinical reasoning based on patient symptoms and matched NICE guidelines",
           "citations": ["Exact excerpts, sentences, or specific section/criteria numbers from the NICE guidelines supporting this decision"]
-        }}
+        }
         """
         
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt + "\n" + json_instruction),
-            ("human", "Please perform the clinical cancer risk assessment based on the following patient data and retrieved NICE cancer guidelines.\n\n### Patient Data:\n{patient_data}\n\n### Retrieved NICE Cancer Guidelines:\n{guidelines}")
-        ])
+        messages = [
+            SystemMessage(content=system_prompt + "\n" + json_instruction),
+            HumanMessage(content=f"Please perform the clinical cancer risk assessment based on the following patient data and retrieved NICE cancer guidelines.\n\n### Patient Data:\n{json.dumps(patient_data, indent=2)}\n\n### Retrieved NICE Cancer Guidelines:\n{guidelines_str}")
+        ]
         
-        chain = prompt | llm
-        response = chain.invoke({
-            "patient_data": json.dumps(patient_data, indent=2),
-            "guidelines": guidelines_str
-        })
+        response = llm.invoke(messages)
         
         # Clean response text (strip markdown ```json block if present)
         response_text = response.content.strip()
