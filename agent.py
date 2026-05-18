@@ -22,6 +22,7 @@ def retrieve_guidelines(symptoms: str) -> str:
 
 # Define the expected structured output
 class AssessmentResult(BaseModel):
+    """Clinical assessment result containing referral risk status, reasoning, and NICE guideline citations."""
     patient_id: str = Field(description="The ID of the patient being assessed.")
     assessment: str = Field(description="The final assessment: either 'Urgent Referral', 'Urgent Investigation', or 'Routine'.")
     reasoning: str = Field(description="The clinical reasoning behind the assessment based on patient data and guidelines.")
