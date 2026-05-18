@@ -32,48 +32,43 @@ def run_assessment(patient_id: str) -> dict:
     Runs the agent to assess a patient.
     """
     try:
-        # Initialize the Vertex AI Gemini model
-        # Note: Requires GCP authentication (e.g., gcloud auth application-default login)
+        # 1. Retrieve patient data (via tool call)
+        patient_data_str = retrieve_patient_data(patient_id)
+        patient_data = json.loads(patient_data_str)
+        
+        if "error" in patient_data:
+            return {"error": patient_data["error"], "message": patient_data["error"]}
+        
+        # 2. Extract symptoms to search guidelines (via RAG lookup tool)
+        symptoms = patient_data.get("symptoms", [])
+        age = patient_data.get("age", "Unknown")
+        gender = patient_data.get("gender", "Unknown")
+        symptoms_query = f"Patient age {age}, gender {gender}, symptoms: {', '.join(symptoms)}"
+        
+        guidelines_str = retrieve_guidelines(symptoms_query)
+        
+        # 3. Initialize the Vertex AI Gemini model
         llm = ChatVertexAI(model_name="gemini-2.5-flash", project="sound-oasis-283702", temperature=0)
-        
-        # Bind the tools to the LLM
-        tools = [retrieve_patient_data, retrieve_guidelines]
-        llm_with_tools = llm.bind_tools(tools)
-        
-        # We'll build a custom simple loop for tool calling, or we can use LangGraph/AgentExecutor.
-        # Given the task simplicity, an AgentExecutor or manual loop is fine. Let's use AgentExecutor.
-        from langchain.agents import AgentExecutor, create_tool_calling_agent
         
         # System prompt instructions
         with open("PROMPTS.md", "r") as f:
             system_prompt = f.read()
 
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            ("human", "Please assess patient ID: {patient_id}"),
-            ("placeholder", "{agent_scratchpad}"),
-        ])
-        
-        agent = create_tool_calling_agent(llm, tools, prompt)
-        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-        
-        # Run the agent to gather data and reason
-        response = agent_executor.invoke({"patient_id": patient_id})
-        output_text = response["output"]
-        
-        # Since we want JSON output as per requirements, we can use a secondary call to enforce the schema,
-        # or ask the agent to return JSON directly. Let's use a structured output parser on the final result.
+        # Bind the structured output format
         structured_llm = llm.with_structured_output(AssessmentResult)
         
-        formatting_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a formatter. Convert the following clinical assessment into the required JSON structure."),
-            ("human", "{text}")
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", system_prompt),
+            ("human", "Please perform the clinical cancer risk assessment based on the following patient data and retrieved NICE cancer guidelines.\n\n### Patient Data:\n{patient_data}\n\n### Retrieved NICE Cancer Guidelines:\n{guidelines}")
         ])
         
-        chain = formatting_prompt | structured_llm
-        final_result = chain.invoke({"text": output_text})
+        chain = prompt | structured_llm
+        result = chain.invoke({
+            "patient_data": json.dumps(patient_data, indent=2),
+            "guidelines": guidelines_str
+        })
         
-        return final_result.dict()
+        return result.dict()
         
     except Exception as e:
         import traceback
