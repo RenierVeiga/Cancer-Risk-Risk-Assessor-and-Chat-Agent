@@ -55,21 +55,45 @@ def run_assessment(patient_id: str) -> dict:
         with open("PROMPTS.md", "r") as f:
             system_prompt = f.read()
 
-        # Bind the structured output format
-        structured_llm = llm.with_structured_output(AssessmentResult)
+        # Append explicit JSON structure instructions to ensure flawless output
+        json_instruction = """
+        IMPORTANT: Your output must be a single, valid JSON object matching the schema below. Do not wrap it in conversational text, and do not add any markdown blocks unless it is a valid JSON payload.
+        
+        JSON Schema:
+        {
+          "patient_id": "The ID of the patient",
+          "assessment": "Urgent Referral" | "Urgent Investigation" | "Routine",
+          "reasoning": "The detailed clinical reasoning based on patient symptoms and matched NICE guidelines",
+          "citations": ["Exact excerpts, sentences, or specific section/criteria numbers from the NICE guidelines supporting this decision"]
+        }
+        """
         
         prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
+            ("system", system_prompt + "\n" + json_instruction),
             ("human", "Please perform the clinical cancer risk assessment based on the following patient data and retrieved NICE cancer guidelines.\n\n### Patient Data:\n{patient_data}\n\n### Retrieved NICE Cancer Guidelines:\n{guidelines}")
         ])
         
-        chain = prompt | structured_llm
-        result = chain.invoke({
+        chain = prompt | llm
+        response = chain.invoke({
             "patient_data": json.dumps(patient_data, indent=2),
             "guidelines": guidelines_str
         })
         
-        return result.dict()
+        # Clean response text (strip markdown ```json block if present)
+        response_text = response.content.strip()
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+        response_text = response_text.strip()
+        
+        # Parse and validate using Pydantic
+        parsed_data = json.loads(response_text)
+        validated_result = AssessmentResult(**parsed_data)
+        
+        return validated_result.dict()
         
     except Exception as e:
         import traceback
