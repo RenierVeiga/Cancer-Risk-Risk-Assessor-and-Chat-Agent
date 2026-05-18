@@ -60,12 +60,12 @@ def run_assessment(patient_id: str) -> dict:
         IMPORTANT: Your output must be a single, valid JSON object matching the schema below. Do not wrap it in conversational text, and do not add any markdown blocks unless it is a valid JSON payload.
         
         JSON Schema:
-        {
+        {{
           "patient_id": "The ID of the patient",
           "assessment": "Urgent Referral" | "Urgent Investigation" | "Routine",
           "reasoning": "The detailed clinical reasoning based on patient symptoms and matched NICE guidelines",
           "citations": ["Exact excerpts, sentences, or specific section/criteria numbers from the NICE guidelines supporting this decision"]
-        }
+        }}
         """
         
         prompt = ChatPromptTemplate.from_messages([
