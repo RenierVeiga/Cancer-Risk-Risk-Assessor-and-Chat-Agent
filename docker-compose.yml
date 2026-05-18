@@ -6,6 +6,7 @@ services:
     image: cthesigns-app
     ports:
       - "8000:8000"
+      - "5678:5678"
     volumes:
       - .:/app
       # Mount the actual application default credentials directly from the host's gcloud config folder
@@ -13,4 +14,5 @@ services:
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
       - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+    command: sh -c "python ingest.py && python -m debugpy --listen 0.0.0.0:5678 -m uvicorn main:app --host 0.0.0.0 --port 8000"
     restart: unless-stopped
