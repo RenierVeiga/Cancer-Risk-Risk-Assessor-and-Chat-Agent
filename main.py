@@ -1,12 +1,26 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from agent import run_assessment
+import os
 
 app = FastAPI(
     title="NG12 Cancer Risk Assessor",
     description="A Clinical Decision Support Agent using Gemini 1.5 to evaluate patient records against NICE NG12 Cancer Guidelines.",
     version="1.0.0"
 )
+
+# Create static directory if it doesn't exist to prevent startup crashes
+os.makedirs("static", exist_ok=True)
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/")
+def read_root():
+    """Serves the frontend UI."""
+    return FileResponse("static/index.html")
 
 class AssessmentRequest(BaseModel):
     patient_id: str

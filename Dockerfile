@@ -18,13 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
-# Note: The vector database (chroma_db) needs to be built either during build, 
-# at runtime startup, or mapped as a volume.
-# To build during image creation, uncomment the following line (will download PDF and build DB):
-# RUN python ingest.py
-
 # Expose the port
 EXPOSE 8000
 
-# Run the FastAPI application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Download PDF and build the ChromaDB store on container startup, then launch FastAPI
+CMD ["sh", "-c", "python ingest.py && uvicorn main:app --host 0.0.0.0 --port 8000"]

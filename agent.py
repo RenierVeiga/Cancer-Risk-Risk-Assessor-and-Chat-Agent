@@ -31,7 +31,7 @@ def run_assessment(patient_id: str) -> dict:
     try:
         # Initialize the Vertex AI Gemini model
         # Note: Requires GCP authentication (e.g., gcloud auth application-default login)
-        llm = ChatVertexAI(model_name="gemini-1.5-pro-preview-0409", temperature=0)
+        llm = ChatVertexAI(model_name="gemini-1.5-pro", temperature=0)
         
         # Bind the tools to the LLM
         tools = [retrieve_patient_data, retrieve_guidelines]

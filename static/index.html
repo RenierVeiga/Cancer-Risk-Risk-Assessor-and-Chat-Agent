@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NG12 Cancer Risk Assessor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="background-gradients">
+        <div class="gradient-blob red-blob"></div>
+        <div class="gradient-blob blue-blob"></div>
+    </div>
+
+    <main class="container">
+        <header class="header">
+            <h1>Cancer Risk <span class="accent">Assessor</span></h1>
+            <p>NG12 Clinical Decision Support Agent</p>
+        </header>
+
+        <section class="card input-section">
+            <form id="assessment-form">
+                <div class="input-group">
+                    <label for="patient-id">Patient ID</label>
+                    <input type="text" id="patient-id" name="patient_id" placeholder="e.g. PT-101" required autocomplete="off">
+                </div>
+                <button type="submit" class="btn-primary">
+                    <span class="btn-text">Assess Patient</span>
+                    <span class="loader hidden"></span>
+                </button>
+            </form>
+        </section>
+
+        <section id="result-section" class="card result-section hidden">
+            <div class="result-header">
+                <h2>Assessment Result</h2>
+                <div id="assessment-badge" class="badge"></div>
+            </div>
+            
+            <div class="result-content">
+                <div class="data-group">
+                    <h3>Clinical Reasoning</h3>
+                    <p id="reasoning-text"></p>
+                </div>
+                
+                <div class="data-group">
+                    <h3>NG12 Guidelines Citations</h3>
+                    <ul id="citations-list"></ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="error-section" class="card error-section hidden">
+            <div class="error-header">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <h2>Assessment Failed</h2>
+            </div>
+            <p id="error-text"></p>
+        </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

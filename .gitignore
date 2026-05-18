@@ -1,0 +1,21 @@
+# Python virtual environments
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Local databases / Vector stores
+chroma_db/
+ng12_guidelines.pdf
+
+# GCP Credentials (DO NOT COMMIT)
+application_default_credentials.json
+credentials.json
+
+# Environment variables
+.env
+
+# OS-specific
+.DS_Store
+Thumbs.db
