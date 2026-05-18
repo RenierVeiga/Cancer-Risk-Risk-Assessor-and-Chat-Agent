@@ -37,18 +37,31 @@
         <section id="result-section" class="card result-section hidden">
             <div class="result-header">
                 <h2>Assessment Result</h2>
-                <div id="assessment-badge" class="badge"></div>
+                <div class="badge-group">
+                    <div id="assessment-badge" class="badge"></div>
+                    <div id="cancer-badge" class="badge cancer-badge hidden"></div>
+                </div>
             </div>
             
             <div class="result-content">
                 <div class="data-group">
-                    <h3>Clinical Reasoning</h3>
-                    <p id="reasoning-text"></p>
+                    <h3>Clinical Synthesis & Safety Netting</h3>
+                    <p id="reasoning-text" class="reasoning-text"></p>
+                </div>
+
+                <div class="data-group">
+                    <h3>Matched NICE NG12 Recommendations</h3>
+                    <div id="matched-rules-list" class="matched-rules-list"></div>
+                </div>
+
+                <div class="data-group">
+                    <h3>GP Actionable Next Steps</h3>
+                    <ul id="next-steps-list" class="next-steps-list"></ul>
                 </div>
                 
                 <div class="data-group">
                     <h3>NG12 Guidelines Citations</h3>
-                    <ul id="citations-list"></ul>
+                    <ul id="citations-list" class="citations-list"></ul>
                 </div>
             </div>
         </section>

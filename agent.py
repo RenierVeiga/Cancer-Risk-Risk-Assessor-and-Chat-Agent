@@ -21,11 +21,21 @@ def retrieve_guidelines(symptoms: str) -> str:
     return search_guidelines(symptoms)
 
 # Define the expected structured output
-class AssessmentResult(BaseModel):
-    """Clinical assessment result containing referral risk status, reasoning, and NICE guideline citations."""
+class MatchedCriteria(BaseModel):
+    recommendation_id: str = Field(description="The exact recommendation ID, e.g. 1.1.2 or 1.2.1")
+    cancer_site: str = Field(description="The suspected cancer site/type, e.g. 'Lung Cancer' or 'Oesophageal Cancer'")
+    guideline_text: str = Field(description="The exact clinical text or criteria of the recommendation from the guideline PDF.")
+    matched_symptoms: List[str] = Field(description="The patient symptoms or risk factors that matched this specific recommendation.")
+    pathway: str = Field(description="The action pathway indicated, e.g. 'Suspected cancer pathway referral' or 'Direct access chest X-ray'")
+
+class PremiumAssessmentResult(BaseModel):
+    """Clinical assessment result containing referral risk status, reasoning, matched rules, citations, and recommended next steps."""
     patient_id: str = Field(description="The ID of the patient being assessed.")
-    assessment: str = Field(description="The final assessment: either 'Urgent Referral', 'Urgent Investigation', or 'Routine'.")
-    reasoning: str = Field(description="The clinical reasoning behind the assessment based on patient data and guidelines.")
+    assessment_status: str = Field(description="The highest urgency level matched: 'Urgent Referral', 'Urgent Investigation', or 'Routine'.")
+    primary_suspected_cancer: str = Field(description="The primary suspected cancer type identified, or 'None'.")
+    matched_rules: List[MatchedCriteria] = Field(description="List of all individual NICE recommendations that matched this patient.")
+    clinical_reasoning: str = Field(description="The detailed clinical reasoning behind the assessment based on patient data and guidelines.")
+    recommended_next_steps: str = Field(description="Clear, actionable GP next steps (e.g. Arrange direct-access chest X-ray within 48 hours).")
     citations: List[str] = Field(description="Specific excerpts or citations from the NG12 guidelines supporting the assessment.")
 
 def run_assessment(patient_id: str) -> dict:
@@ -65,8 +75,19 @@ def run_assessment(patient_id: str) -> dict:
         JSON Schema:
         {
           "patient_id": "The ID of the patient",
-          "assessment": "Urgent Referral" | "Urgent Investigation" | "Routine",
-          "reasoning": "The detailed clinical reasoning based on patient symptoms and matched NICE guidelines",
+          "assessment_status": "Urgent Referral" | "Urgent Investigation" | "Routine",
+          "primary_suspected_cancer": "The primary suspected cancer site/type identified, or 'None'",
+          "matched_rules": [
+            {
+              "recommendation_id": "The exact recommendation number (e.g., '1.1.2', '1.2.1')",
+              "cancer_site": "The suspected cancer site (e.g., 'Lung Cancer', 'Pancreatic Cancer')",
+              "guideline_text": "The exact clinical criteria or recommendation text from the guidelines",
+              "matched_symptoms": ["List of symptoms matching the patient's record for this rule"],
+              "pathway": "The diagnostic or referral pathway (e.g., 'Suspected cancer pathway referral', 'Direct access chest X-ray')"
+            }
+          ],
+          "clinical_reasoning": "The detailed clinical reasoning behind the assessment based on patient symptoms, risk factors, and NICE guidelines",
+          "recommended_next_steps": "Clear, actionable GP next steps (e.g. Arrange direct-access chest X-ray within 48 hours)",
           "citations": ["Exact excerpts, sentences, or specific section/criteria numbers from the NICE guidelines supporting this decision"]
         }
         """
@@ -90,7 +111,7 @@ def run_assessment(patient_id: str) -> dict:
         
         # Parse and validate using Pydantic
         parsed_data = json.loads(response_text)
-        validated_result = AssessmentResult(**parsed_data)
+        validated_result = PremiumAssessmentResult(**parsed_data)
         
         return validated_result.dict()
         
