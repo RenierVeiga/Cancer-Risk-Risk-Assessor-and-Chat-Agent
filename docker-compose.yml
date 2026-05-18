@@ -11,4 +11,5 @@ services:
       - ${APPDATA:-$HOME/.config}/gcloud/application_default_credentials.json:/app/credentials.json
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
+      - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
     restart: unless-stopped

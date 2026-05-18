@@ -1,3 +1,6 @@
+import os
+os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
+
 import json
 from pydantic import BaseModel, Field
 from typing import List
@@ -31,7 +34,7 @@ def run_assessment(patient_id: str) -> dict:
     try:
         # Initialize the Vertex AI Gemini model
         # Note: Requires GCP authentication (e.g., gcloud auth application-default login)
-        llm = ChatVertexAI(model_name="gemini-1.5-pro", temperature=0)
+        llm = ChatVertexAI(model_name="gemini-2.5-flash", project="sound-oasis-283702", temperature=0)
         
         # Bind the tools to the LLM
         tools = [retrieve_patient_data, retrieve_guidelines]
@@ -73,4 +76,6 @@ def run_assessment(patient_id: str) -> dict:
         return final_result.dict()
         
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return {"error": str(e), "message": "Failed to run assessment. Ensure you have GCP credentials active (e.g., gcloud auth application-default login) and Vertex AI API enabled."}
