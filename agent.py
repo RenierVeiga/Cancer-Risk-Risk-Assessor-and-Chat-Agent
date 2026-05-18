@@ -50,11 +50,17 @@ def run_assessment(patient_id: str) -> dict:
         if "error" in patient_data:
             return {"error": patient_data["error"], "message": patient_data["error"]}
         
-        # 2. Extract symptoms to search guidelines (via RAG lookup tool)
+        # 2. Extract clinical features and format an optimized RAG query
         symptoms = patient_data.get("symptoms", [])
         age = patient_data.get("age", "Unknown")
         gender = patient_data.get("gender", "Unknown")
-        symptoms_query = f"Patient age {age}, gender {gender}, symptoms: {', '.join(symptoms)}"
+        smoking = patient_data.get("smoking_history", "Never Smoked")
+        
+        # Translate clinical risk factors to map directly to NICE guideline phrases (e.g., "ever smoked")
+        smoking_clause = "ever smoked" if smoking in ["Current Smoker", "Ex-Smoker"] else "never smoked"
+        
+        # Formulate a natural clinical presentation query to maximize semantic similarity in vector search
+        symptoms_query = f"Patient aged {age}, {gender.lower()}, {smoking_clause}, presenting with: {', '.join(symptoms)}"
         
         guidelines_str = retrieve_guidelines(symptoms_query)
         
