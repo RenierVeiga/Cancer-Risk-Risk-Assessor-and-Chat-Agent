@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Literal
 from pydantic import BaseModel, Field
 from langchain_google_vertexai import ChatVertexAI
 from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_core.tools import tool
 from settings import get_app_settings
 from tools import (
     GuidelineMatch,
@@ -18,17 +17,6 @@ from tools import (
     search_guidelines_structured,
 )
 
-# Define tools for the agent
-@tool
-def retrieve_patient_data(patient_id: str) -> str:
-    """Retrieves structured patient data from the mock database based on their ID."""
-    return get_patient_data(patient_id)
-
-@tool
-def retrieve_guidelines(symptoms: str) -> str:
-    """Searches the NG12 guidelines vector store for relevant criteria based on the patient's symptoms."""
-    return search_guidelines_structured(symptoms)
-
 # Define the expected structured output
 class MatchedCriteria(BaseModel):
     recommendation_id: str = Field(description="The exact recommendation ID, e.g. 1.1.2 or 1.2.1")
@@ -36,6 +24,18 @@ class MatchedCriteria(BaseModel):
     guideline_text: str = Field(description="The exact clinical text or criteria of the recommendation from the guideline PDF.")
     matched_symptoms: List[str] = Field(description="The patient symptoms or risk factors that matched this specific recommendation.")
     pathway: str = Field(description="The action pathway indicated, e.g. 'Suspected cancer pathway referral' or 'Direct access chest X-ray'")
+
+
+class Citation(BaseModel):
+    source: str
+    page: int
+    chunk_id: str
+    excerpt: str
+    citation: str | None = None
+    section_title: str | None = None
+    chunk_index: int | None = None
+    page_start: int | None = None
+    page_end: int | None = None
 
 class PremiumAssessmentResult(BaseModel):
     """Clinical assessment result containing referral risk status, reasoning, matched rules, citations, and recommended next steps."""
@@ -45,13 +45,7 @@ class PremiumAssessmentResult(BaseModel):
     matched_rules: List[MatchedCriteria] = Field(default_factory=list, description="List of all individual NICE recommendations that matched this patient.")
     clinical_reasoning: str = Field(description="The detailed clinical reasoning behind the assessment based on patient data and guidelines.")
     recommended_next_steps: str = Field(description="Clear, actionable GP next steps (e.g. Arrange direct-access chest X-ray within 48 hours).")
-    citations: List["Citation"] = Field(default_factory=list, description="Specific excerpts or citations from the NG12 guidelines supporting the assessment.")
-
-class Citation(BaseModel):
-    source: str
-    page: int
-    chunk_id: str
-    excerpt: str
+    citations: List[Citation] = Field(default_factory=list, description="Specific excerpts or citations from the NG12 guidelines supporting the assessment.")
 
 def _build_assessor_citations(matches: List[GuidelineMatch], limit: int = 5) -> List[Dict[str, Any]]:
     citations: List[Dict[str, Any]] = []
@@ -67,7 +61,12 @@ def _build_assessor_citations(matches: List[GuidelineMatch], limit: int = 5) -> 
             source=match.source or "NG12 PDF",
             page=int(match.page or 1),
             chunk_id=chunk_id,
-            excerpt=(match.document or "").strip()
+            excerpt=(match.document or "").strip(),
+            citation=match.citation or f"{match.source or 'NG12 PDF'} p.{match.page or 1}, chunk {i + 1}",
+            section_title=match.section_title,
+            chunk_index=match.chunk_index,
+            page_start=match.page_start,
+            page_end=match.page_end,
         ).model_dump())
 
     return citations
@@ -88,13 +87,27 @@ def _format_guideline_context(matches: List[GuidelineMatch]) -> str:
 
     return "\n\n".join(formatted)
 
+
+def _load_prompt_file() -> str:
+    prompt_path = os.path.join(os.path.dirname(__file__), "prompts", "RISK_ASSESSOR_PROMPT.md")
+    if not os.path.exists(prompt_path):
+        raise RuntimeError(f"Prompt file not found: {prompt_path}")
+
+    with open(prompt_path, "r", encoding="utf-8") as handle:
+        prompt = handle.read().strip()
+
+    if not prompt:
+        raise RuntimeError(f"Prompt file is empty: {prompt_path}")
+
+    return prompt
+
 def run_assessment(patient_id: str) -> dict:
     """
     Runs the agent to assess a patient.
     """
     try:
         # 1. Retrieve patient data (via tool call)
-        patient_data_str = retrieve_patient_data(patient_id)
+        patient_data_str = get_patient_data(patient_id)
         patient_payload = json.loads(patient_data_str)
         
         if "error" in patient_payload:
@@ -125,59 +138,17 @@ def run_assessment(patient_id: str) -> dict:
             model_name=app_settings.vertex_ai.model_name,
             project=app_settings.vertex_ai.project,
             temperature=0,
-        )
-        
-        # System prompt instructions
-        prompt_path = os.path.join(os.path.dirname(__file__), "prompts", "RISK_ASSESSOR_PROMPT.md")
-        system_prompt = "You are an expert Clinical Decision Support Agent. Your objective is to assess patient cancer risk based on the official NICE NG12 Cancer Guidelines."
-        if os.path.exists(prompt_path):
-            with open(prompt_path, "r", encoding="utf-8") as f:
-                system_prompt = f.read()
+        ).with_structured_output(PremiumAssessmentResult)
 
-        # Append explicit JSON structure instructions (single braces work perfectly since there is no prompt formatting engine)
-        json_instruction = """
-        IMPORTANT: Your output must be a single, valid JSON object matching the schema below. Do not wrap it in conversational text, and do not add any markdown blocks unless it is a valid JSON payload.
-        
-        JSON Schema:
-        {
-          "patient_id": "The ID of the patient",
-          "assessment_status": "Urgent Referral" | "Urgent Investigation" | "Routine",
-          "primary_suspected_cancer": "The primary suspected cancer site/type identified, or 'None'",
-          "matched_rules": [
-            {
-              "recommendation_id": "The exact recommendation number (e.g., '1.1.2', '1.2.1')",
-              "cancer_site": "The suspected cancer site (e.g., 'Lung Cancer', 'Pancreatic Cancer')",
-              "guideline_text": "The exact clinical criteria or recommendation text from the guidelines",
-              "matched_symptoms": ["List of symptoms matching the patient's record for this rule"],
-              "pathway": "The diagnostic or referral pathway (e.g., 'Suspected cancer pathway referral', 'Direct access chest X-ray')"
-            }
-          ],
-          "clinical_reasoning": "The detailed clinical reasoning behind the assessment based on patient symptoms, risk factors, and NICE guidelines",
-          "recommended_next_steps": "Clear, actionable GP next steps (e.g. Arrange direct-access chest X-ray within 48 hours)",
-          "citations": ["Exact excerpts, sentences, or specific section/criteria numbers from the NICE guidelines supporting this decision"]
-        }
-        """
-        
+        system_prompt = _load_prompt_file()
+
         messages = [
-            SystemMessage(content=system_prompt + "\n" + json_instruction),
+            SystemMessage(content=system_prompt),
             HumanMessage(content=f"Please perform the clinical cancer risk assessment based on the following patient data and retrieved NICE cancer guidelines.\n\n### Patient Data:\n{json.dumps(patient_data.model_dump(), indent=2)}\n\n### Retrieved NICE Cancer Guidelines:\n{guidelines_str}")
         ]
         
         response = llm.invoke(messages)
-        
-        # Clean response text (strip markdown ```json block if present)
-        response_text = response.content.strip()
-        if response_text.startswith("```json"):
-            response_text = response_text[7:]
-        if response_text.startswith("```"):
-            response_text = response_text[3:]
-        if response_text.endswith("```"):
-            response_text = response_text[:-3]
-        response_text = response_text.strip()
-        
-        # Parse and validate using Pydantic
-        parsed_data = json.loads(response_text)
-        validated_result = PremiumAssessmentResult(**parsed_data)
+        validated_result = response if isinstance(response, PremiumAssessmentResult) else PremiumAssessmentResult.model_validate(response)
         result = validated_result.model_dump()
         result["citations"] = _build_assessor_citations(guideline_matches)
 

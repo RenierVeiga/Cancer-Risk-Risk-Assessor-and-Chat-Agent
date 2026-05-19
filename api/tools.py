@@ -24,6 +24,11 @@ class GuidelineMatch(BaseModel):
     document: str
     page: int = Field(ge=1)
     source: str
+    citation: str | None = None
+    section_title: str | None = None
+    chunk_index: int | None = None
+    page_start: int | None = None
+    page_end: int | None = None
 
 
 class GuidelineSearchResponse(BaseModel):

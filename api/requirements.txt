@@ -1,8 +1,7 @@
 fastapi==0.104.1
 uvicorn==0.24.0
 pydantic>=2.5.2
-langchain-google-vertexai==1.0.3
-langgraph>=0.1.19,<0.2.0
+langchain-google-vertexai==3.2.3
+langgraph==1.2.0
 requests==2.31.0
-langchain==0.1.20
 debugpy==1.8.1

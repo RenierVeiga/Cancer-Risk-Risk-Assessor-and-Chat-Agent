@@ -15,7 +15,7 @@ A FastAPI + Docker application that assesses cancer risk from structured patient
 - Docker Desktop
 - Docker Compose
 - Optional: Google Cloud application default credentials for Vertex AI access
-- A valid API configuration in api/app_config.json or environment variables for Vertex AI
+- A valid API configuration in app_config.json or environment variables for Vertex AI
 
 ## Project layout
 
@@ -53,7 +53,9 @@ If you do not have credentials available, the app can still start, but AI calls 
 
 ## App configuration
 
-Before starting the app, update [api/app_config.json](api/app_config.json) with your own Vertex AI settings.
+Before starting the app, update [app_config.json](app_config.json) with your own Vertex AI settings.
+
+The Docker setup mounts this root-level file into the web container automatically.
 
 The file must include:
 

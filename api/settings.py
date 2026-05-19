@@ -17,7 +17,11 @@ class AppSettings(BaseModel):
 
 @lru_cache(maxsize=1)
 def get_app_settings() -> AppSettings:
-    config_path = Path(__file__).with_name("app_config.json")
+    candidates = [
+        Path(__file__).resolve().parents[1] / "app_config.json",
+        Path(__file__).resolve().with_name("app_config.json"),
+    ]
+    config_path = next((path for path in candidates if path.exists()), candidates[-1])
     payload: dict = {}
 
     if config_path.exists():

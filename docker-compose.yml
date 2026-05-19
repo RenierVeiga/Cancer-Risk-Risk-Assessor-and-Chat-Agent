@@ -18,6 +18,7 @@ services:
       - "5678:5678"
     volumes:
       - ./api:/app
+      - ./app_config.json:/app/app_config.json
       # Mount the actual application default credentials directly from the host's gcloud config folder
       - ${APPDATA:-$HOME/.config}/gcloud/application_default_credentials.json:/app/credentials.json
     environment:

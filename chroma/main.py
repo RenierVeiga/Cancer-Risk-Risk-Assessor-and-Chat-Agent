@@ -21,6 +21,11 @@ class SearchMatch(BaseModel):
     document: str
     page: int
     source: str
+    citation: str | None = None
+    section_title: str | None = None
+    chunk_index: int | None = None
+    page_start: int | None = None
+    page_end: int | None = None
 
 class SearchResponse(BaseModel):
     results: list[SearchMatch] = Field(default_factory=list)
@@ -63,12 +68,29 @@ def search_guidelines(request: SearchRequest):
             meta = metadatas[i] if i < len(metadatas) and metadatas[i] else {}
             page_num = meta.get("page", 1)
             source = meta.get("source", "NG12 PDF")
+            citation = meta.get("citation")
+            section_title = meta.get("section_title")
+            chunk_index = meta.get("chunk_index")
+            page_start = meta.get("page_start")
+            page_end = meta.get("page_end")
+
+            if not citation:
+                citation = f"{source} p.{page_num}, chunk {i + 1}"
+            if page_start is None:
+                page_start = page_num
+            if page_end is None:
+                page_end = page_num
             
             matches.append(SearchMatch(
                 chunk_id=chunk_id,
                 document=doc_text,
                 page=page_num,
-                source=source
+                source=source,
+                citation=citation,
+                section_title=section_title,
+                chunk_index=chunk_index,
+                page_start=page_start,
+                page_end=page_end,
             ))
             
         return SearchResponse(results=matches)

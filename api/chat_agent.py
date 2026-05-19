@@ -48,6 +48,11 @@ class Citation(BaseModel):
     page: int
     chunk_id: str
     excerpt: str
+    citation: Optional[str] = None
+    section_title: Optional[str] = None
+    chunk_index: Optional[int] = None
+    page_start: Optional[int] = None
+    page_end: Optional[int] = None
 
 class ChatResponse(BaseModel):
     session_id: str
@@ -133,7 +138,7 @@ def _render_guideline_excerpt_summary(matches: List[GuidelineMatch], limit: int 
     lines: List[str] = []
     for index, match in enumerate(matches[:limit], start=1):
         lines.append(
-            f"[{index}] Page {match.page} | Chunk {match.chunk_id} | {match.source}\n"
+            f"[{index}] {match.citation or f'{match.source} p.{match.page}, chunk {index}'}\n"
             f"{match.document[:1000]}"
         )
 
@@ -338,7 +343,12 @@ def _compile_chat_workflow():
                         source=match.source or "NG12 PDF",
                         page=match.page or 1,
                         chunk_id=chunk_id,
-                        excerpt=match.document or ""
+                        excerpt=match.document or "",
+                        citation=match.citation or f"{match.source or 'NG12 PDF'} p.{match.page or 1}, chunk {idx + 1}",
+                        section_title=match.section_title,
+                        chunk_index=match.chunk_index,
+                        page_start=match.page_start,
+                        page_end=match.page_end,
                     ))
 
         if not citations and matches:
@@ -348,7 +358,12 @@ def _compile_chat_workflow():
                     source=match.source or "NG12 PDF",
                     page=match.page or 1,
                     chunk_id=chunk_id,
-                    excerpt=match.document or ""
+                    excerpt=match.document or "",
+                    citation=match.citation or f"{match.source or 'NG12 PDF'} p.{match.page or 1}, chunk {idx + 1}",
+                    section_title=match.section_title,
+                    chunk_index=match.chunk_index,
+                    page_start=match.page_start,
+                    page_end=match.page_end,
                 ))
 
         state["answer"] = answer

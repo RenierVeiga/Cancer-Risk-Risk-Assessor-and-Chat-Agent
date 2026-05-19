@@ -181,12 +181,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         li.className = 'citation-card';
                         li.innerHTML = `
                             <div class="citation-card-header">
-                                <span class="citation-card-source">${cit.source || 'NG12 PDF'} [${index + 1}]</span>
-                                <span class="citation-card-page">Page ${cit.page ?? 'N/A'}</span>
+                                <span class="citation-card-source">${cit.citation || cit.source || 'NG12 PDF'} [${index + 1}]</span>
+                                <span class="citation-card-page">${cit.page_start && cit.page_end && cit.page_start !== cit.page_end ? `Pages ${cit.page_start}-${cit.page_end}` : `Page ${cit.page ?? 'N/A'}`}</span>
                             </div>
                             <div class="citation-card-excerpt">
                                 <em>"${(cit.excerpt || '').trim()}"</em>
-                                <div class="citation-card-chunk">Chunk ID: ${cit.chunk_id || 'N/A'}</div>
+                                <div class="citation-card-chunk">Chunk ID: ${cit.chunk_id || 'N/A'}${cit.section_title ? ` • ${cit.section_title}` : ''}</div>
                             </div>
                         `;
                     } else {
@@ -706,12 +706,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 citationCard.innerHTML = `
                     <div class="chat-citation-header">
-                        <span class="chat-citation-source">NICE Guideline Reference [${index + 1}]</span>
-                        <span class="chat-citation-page">Page ${cit.page}</span>
+                        <span class="chat-citation-source">${cit.citation || 'NICE Guideline Reference'} [${index + 1}]</span>
+                        <span class="chat-citation-page">${cit.page_start && cit.page_end && cit.page_start !== cit.page_end ? `Pages ${cit.page_start}-${cit.page_end}` : `Page ${cit.page}`}</span>
                     </div>
                     <div class="chat-citation-excerpt">
                         <em>"${(cit.excerpt || '').trim()}"</em>
-                        <div style="font-size:0.7rem; color:var(--accent-blue); margin-top:0.4rem; text-transform:uppercase; font-weight:700;">Chunk ID: ${cit.chunk_id || 'N/A'}</div>
+                        <div style="font-size:0.7rem; color:var(--accent-blue); margin-top:0.4rem; text-transform:uppercase; font-weight:700;">Chunk ID: ${cit.chunk_id || 'N/A'}${cit.section_title ? ` • ${cit.section_title}` : ''}</div>
                     </div>
                 `;
                 
