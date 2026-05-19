@@ -1,18 +1,30 @@
-version: '3.8'
-
 services:
+  chroma:
+    build: ./chroma
+    image: cthesigns-chroma
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./chroma:/app
+    environment:
+      - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
+    restart: unless-stopped
+
   web:
-    build: .
+    build: ./api
     image: cthesigns-app
     ports:
       - "8000:8000"
       - "5678:5678"
     volumes:
-      - .:/app
+      - ./api:/app
       # Mount the actual application default credentials directly from the host's gcloud config folder
       - ${APPDATA:-$HOME/.config}/gcloud/application_default_credentials.json:/app/credentials.json
     environment:
       - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json
       - PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
-    command: sh -c "python ingest.py && python -m debugpy --listen 0.0.0.0:5678 -m uvicorn main:app --host 0.0.0.0 --port 8000"
+      - CHROMA_URL=http://chroma:8001/search
+    command: sh -c "python -m debugpy --listen 0.0.0.0:5678 -m uvicorn main:app --host 0.0.0.0 --port 8000"
+    depends_on:
+      - chroma
     restart: unless-stopped

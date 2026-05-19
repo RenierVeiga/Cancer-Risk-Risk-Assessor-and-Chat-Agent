@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NG12 Cancer Risk Assessor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="background-gradients">
+        <div class="gradient-blob red-blob"></div>
+        <div class="gradient-blob blue-blob"></div>
+    </div>
+
+    <main class="container">
+        <header class="header">
+            <h1>Cancer Risk <span class="accent">Assessor</span></h1>
+            <p>NG12 Clinical Decision Support Agent</p>
+        </header>
+
+        <div class="tabs-container">
+            <button type="button" class="tab-btn active" id="tab-btn-assessor">NG12 Risk Assessor</button>
+            <button type="button" class="tab-btn" id="tab-btn-chat">Clinical Chat Assistant</button>
+        </div>
+
+        <!-- RISK ASSESSOR TAB PANEL -->
+        <div id="tab-content-assessor">
+            <section class="card input-section">
+                <form id="assessment-form">
+                    <div class="input-group">
+                        <label for="patient-id">Patient ID</label>
+                        <input type="text" id="patient-id" name="patient_id" placeholder="e.g. PT-101" required autocomplete="off">
+                    </div>
+                    <button type="submit" class="btn-primary">
+                        <span class="btn-text">Assess Patient</span>
+                        <span class="loader hidden"></span>
+                    </button>
+                </form>
+            </section>
+
+            <section id="result-section" class="card result-section hidden">
+                <div class="result-header">
+                    <h2>Assessment Result</h2>
+                    <div class="badge-group">
+                        <div id="assessment-badge" class="badge"></div>
+                        <div id="cancer-badge" class="badge cancer-badge hidden"></div>
+                    </div>
+                </div>
+                
+                <div class="result-content">
+                    <div class="data-group">
+                        <h3>Clinical Synthesis & Safety Netting</h3>
+                        <p id="reasoning-text" class="reasoning-text"></p>
+                    </div>
+
+                    <div class="data-group">
+                        <h3>Matched NICE NG12 Recommendations</h3>
+                        <div id="matched-rules-list" class="matched-rules-list"></div>
+                    </div>
+
+                    <div class="data-group">
+                        <h3>GP Actionable Next Steps</h3>
+                        <ul id="next-steps-list" class="next-steps-list"></ul>
+                    </div>
+                    
+                    <div class="data-group">
+                        <h3>NG12 Guidelines Citations</h3>
+                        <ul id="citations-list" class="citations-list"></ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="error-section" class="card error-section hidden">
+                <div class="error-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <h2>Assessment Failed</h2>
+                </div>
+                <p id="error-text"></p>
+            </section>
+        </div>
+
+        <!-- CHAT ASSISTANT TAB PANEL -->
+        <div id="tab-content-chat" class="hidden">
+            <section class="card chat-workspace-card" style="padding: 0;">
+                <div class="chat-workspace">
+                    <aside class="chat-sidebar">
+                        <div class="chat-sidebar-header">
+                            <div>
+                                <div class="chat-sidebar-title">Chats</div>
+                                <div class="chat-sidebar-subtitle">Previous conversations</div>
+                            </div>
+
+                            <button type="button" id="new-chat-btn" class="chat-secondary-btn">New chat</button>
+                        </div>
+
+                        <div id="chat-session-list" class="chat-session-list" aria-label="Conversation list"></div>
+                    </aside>
+
+                    <div class="chat-container">
+                        <div id="chat-log" class="chat-log">
+                            <div class="chat-message clinician">
+                                <div class="chat-message-bubble">
+                                    Hello! I am your Clinical Assistant grounded in the official NICE NG12 Suspected Cancer Guidelines. Please enter a Patient ID (e.g. <strong>PT-101</strong>) to start a new clinical session.
+                                </div>
+                                <div class="chat-message-meta">Clinical Assistant</div>
+                            </div>
+                        </div>
+                        
+                        <form id="chat-input-form" class="chat-input-panel">
+                            <input type="text" id="chat-input" class="chat-input" placeholder="Type your clinical query here..." required autocomplete="off">
+                            <button type="submit" class="chat-send-btn" aria-label="Send message">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

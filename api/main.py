@@ -4,9 +4,9 @@ os.environ["PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION"] = "python"
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
-from agent import run_assessment
-import os
+from pydantic import BaseModel, Field
+from risk_assessor import PremiumAssessmentResult, run_assessment
+from chat_agent import router as chat_router
 
 app = FastAPI(
     title="NG12 Cancer Risk Assessor",
@@ -26,9 +26,13 @@ def read_root():
     return FileResponse("static/index.html")
 
 class AssessmentRequest(BaseModel):
-    patient_id: str
+    patient_id: str = Field(min_length=1)
 
-@app.post("/assess")
+
+class HealthResponse(BaseModel):
+    status: str
+
+@app.post("/assess", response_model=PremiumAssessmentResult)
 def assess_patient(request: AssessmentRequest):
     """
     Endpoint to assess a patient's risk based on their ID.
@@ -45,7 +49,14 @@ def assess_patient(request: AssessmentRequest):
         
     return result
 
-@app.get("/health")
+# Mount the chat conversational router
+app.include_router(chat_router)
+
+# =====================================================================
+# HEALTH CHECK
+# =====================================================================
+
+@app.get("/health", response_model=HealthResponse)
 def health_check():
     """Health check endpoint."""
-    return {"status": "healthy"}
+    return HealthResponse(status="healthy")

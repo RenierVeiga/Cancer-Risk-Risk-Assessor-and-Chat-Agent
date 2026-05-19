@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose the port
-EXPOSE 8000
+EXPOSE 8001
 
 # Download PDF and build the ChromaDB store on container startup, then launch FastAPI
-CMD ["sh", "-c", "python ingest.py && uvicorn main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "python ingest.py && uvicorn main:app --host 0.0.0.0 --port 8001"]

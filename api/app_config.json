@@ -1,0 +1,6 @@
+{
+  "vertex_ai": {
+    "model_name": "gemini-2.5-flash",
+    "project": "sound-oasis-283702"
+  }
+}
