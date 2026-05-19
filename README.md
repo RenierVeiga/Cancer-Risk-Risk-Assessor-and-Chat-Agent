@@ -14,7 +14,7 @@ A FastAPI + Docker application that assesses cancer risk from structured patient
 
 - Docker Desktop
 - Docker Compose
-- Optional: Google Cloud application default credentials for Vertex AI access
+- **Required**: Google Cloud application default credentials for Vertex AI access (all AI endpoints will fail without these)
 - A valid API configuration in the root-level app_config.json or environment variables for Vertex AI
 
 ## Project layout
